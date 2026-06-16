@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Baidoa Bedrock Academy</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4fa;color:#222;}
+#loginScreen{min-height:100vh;background:linear-gradient(135deg,#1a3a6b,#2e6db4,#7bafd4);
+  display:flex;align-items:center;justify-content:center;}
+.login-card{background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.25);
+  width:100%;max-width:400px;padding:40px 36px;text-align:center;}
+.login-card h2{color:#1a3a6b;font-size:1.2rem;margin-bottom:2px;}
+.login-card p.sub{color:#2e6db4;font-size:.78rem;font-style:italic;margin-bottom:20px;}
+.login-logo{font-size:3.5rem;margin-bottom:10px;}
+.role-row{display:flex;gap:8px;margin-bottom:16px;}
+.role-btn{flex:1;padding:9px 6px;border:1.5px solid #b8cfe8;border-radius:8px;
+  background:#f4f8fd;color:#1a3a6b;font-size:.78rem;font-weight:700;cursor:pointer;transition:.2s;}
+.role-btn.active{background:#1a3a6b;color:#fff;border-color:#1a3a6b;}
+.linput{width:100%;padding:11px 14px;border:1.5px solid #b8cfe8;border-radius:8px;
+  font-size:.9rem;background:#f4f8fd;outline:none;margin-bottom:12px;}
+.linput:focus{border-color:#2e6db4;}
+.lbtn{width:100%;padding:13px;background:linear-gradient(90deg,#1a3a6b,#2e6db4);
+  color:#fff;font-size:1rem;font-weight:700;border:none;border-radius:9px;cursor:pointer;}
+.lbtn:hover{opacity:.9;}
+.lerr{color:#e74c3c;font-size:.78rem;margin-bottom:8px;display:none;}
+.hint{font-size:.7rem;color:#aaa;margin-top:12px;}
+#appScreen{display:none;}
+.sidebar{position:fixed;top:0;left:0;width:220px;height:100vh;
+  background:linear-gradient(180deg,#1a3a6b,#2e6db4);display:flex;flex-direction:column;z-index:100;}
+.brand{padding:20px 16px 14px;border-bottom:1px solid rgba(255,255,255,.15);}
+.brand h2{color:#fff;font-size:.88rem;font-weight:700;line-height:1.4;}
+.brand p{color:#a8c8f0;font-size:.68rem;margin-top:2px;}
+nav a{display:flex;align-items:center;gap:10px;padding:11px 20px;
+  color:#c8dcf5;font-size:.83rem;cursor:pointer;transition:.2s;}
+nav a:hover,nav a.active{background:rgba(255,255,255,.15);color:#fff;}
+nav a .icon{font-size:1rem;width:20px;text-align:center;}
+.sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.12);
+  color:#a8c8f0;font-size:.68rem;text-align:center;margin-top:auto;}
+.main{margin-left:220px;min-height:100vh;display:flex;flex-direction:column;}
+.topbar{background:#fff;padding:13px 26px;display:flex;align-items:center;
+  justify-content:space-between;box-shadow:0 1px 6px rgba(0,0,0,.08);}
+.topbar h1{font-size:1rem;color:#1a3a6b;font-weight:700;}
+.topbar .user{display:flex;align-items:center;gap:10px;font-size:.8rem;color:#555;}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#1a3a6b,#2e6db4);
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;}
+.logout-btn{padding:5px 12px;background:#e74c3c;color:#fff;border:none;border-radius:6px;
+  font-size:.75rem;font-weight:700;cursor:pointer;margin-left:10px;}
+.content{padding:22px 26px;flex:1;}
+.page{display:none;}.page.active{display:block;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.stat-card{background:#fff;border-radius:12px;padding:16px 18px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);border-left:4px solid #2e6db4;}
+.stat-card.green{border-color:#27ae60;}.stat-card.orange{border-color:#e07b2a;}.stat-card.red{border-color:#e74c3c;}
+.stat-card .num{font-size:1.8rem;font-weight:800;color:#1a3a6b;}
+.stat-card .lbl{font-size:.72rem;color:#888;margin-top:2px;}
+.stat-card .icon{font-size:1.5rem;float:right;margin-top:-2px;}
+.section{background:#fff;border-radius:12px;padding:18px 20px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:18px;}
+.section h3{font-size:.9rem;color:#1a3a6b;font-weight:700;margin-bottom:12px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+table{width:100%;border-collapse:collapse;font-size:.8rem;}
+th{background:#f0f4fa;color:#1a3a6b;font-weight:700;padding:8px 11px;text-align:left;}
+td{padding:8px 11px;border-bottom:1px solid #f0f4fa;color:#444;}
+tr:last-child td{border:none;}tr:hover td{background:#f7faff;}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:700;}
+.badge.present{background:#d4f5e2;color:#1a7a45;}.badge.absent{background:#fde8e8;color:#c0392b;}
+.badge.pass{background:#d4f5e2;color:#1a7a45;}.badge.fail{background:#fde8e8;color:#c0392b;}
+input[type=text],input[type=number],input[type=password],select{
+  padding:8px 10px;border:1.5px solid #c8dcf5;border-radius:7px;
+  font-size:.8rem;width:100%;margin-bottom:10px;background:#f7faff;outline:none;}
+input:focus,select:focus{border-color:#2e6db4;}
+.btn{padding:8px 18px;background:linear-gradient(90deg,#1a3a6b,#2e6db4);
+  color:#fff;border:none;border-radius:7px;font-size:.8rem;font-weight:700;cursor:pointer;transition:.2s;}
+.btn:hover{opacity:.88;}.btn.sm{padding:4px 11px;font-size:.72rem;}
+.btn.red{background:linear-gradient(90deg,#c0392b,#e74c3c);}
+.btn.green{background:linear-gradient(90deg,#1a7a45,#27ae60);}
+.btn.wa{background:linear-gradient(90deg,#128C7E,#25D366);display:inline-flex;align-items:center;gap:6px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.announce{background:linear-gradient(90deg,#1a3a6b,#2e6db4);color:#fff;
+  border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:.8rem;}
+.announce strong{display:block;font-size:.85rem;margin-bottom:2px;}
+.att-bar{height:10px;background:#e8f0fb;border-radius:5px;margin-top:4px;}
+.att-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#27ae60,#2ecc71);}
+.wa-log{background:#fff;border-radius:8px;padding:10px 12px;font-size:.75rem;
+  color:#555;border:1px solid #e0e0e0;max-height:160px;overflow-y:auto;}
+.wa-log-item{padding:5px 0;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;}
+.wa-sent{color:#25D366;font-weight:700;font-size:.72rem;}
+.wa-tpl{padding:6px 12px;border:1.5px solid #25D366;border-radius:20px;background:#fff;
+  color:#128C7E;font-size:.75rem;font-weight:700;cursor:pointer;margin:0 6px 6px 0;display:inline-block;}
+.wa-tpl:hover{background:#25D366;color:#fff;}
+#reportModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;}
+#reportModal.open{display:flex;}
+.report-box{background:#fff;border-radius:14px;padding:30px 34px;max-width:540px;width:95%;max-height:90vh;overflow-y:auto;}
+.rpt-header{text-align:center;border-bottom:2px solid #1a3a6b;padding-bottom:14px;margin-bottom:18px;}
+.rpt-header h2{color:#1a3a6b;font-size:1.2rem;}
+.rpt-info{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px;font-size:.82rem;}
+.rpt-info span{color:#555;}.rpt-info b{color:#1a3a6b;}
+.rpt-table{width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:16px;}
+.rpt-table th{background:#1a3a6b;color:#fff;padding:8px 12px;text-align:left;}
+.rpt-table td{padding:8px 12px;border-bottom:1px solid #e8f0fb;}
+.rpt-avg{text-align:right;font-size:.9rem;font-weight:700;color:#1a3a6b;margin-bottom:14px;}
+.rpt-btns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
+.db-status{display:inline-flex;align-items:center;gap:6px;font-size:.75rem;padding:4px 12px;
+  border-radius:20px;font-weight:700;margin-bottom:14px;}
+.db-status.connected{background:#d4f5e2;color:#1a7a45;}
+.db-status.disconnected{background:#fde8e8;color:#c0392b;}
+.setup-box{background:#fffbea;border:2px dashed #f0c040;border-radius:12px;padding:18px 20px;margin-bottom:18px;}
+.setup-box h4{color:#b7860a;font-size:.9rem;margin-bottom:8px;}
+.setup-box p{font-size:.78rem;color:#555;line-height:1.6;}
+.setup-box code{background:#f0f4fa;padding:1px 6px;border-radius:4px;font-size:.76rem;color:#1a3a6b;}
+.step{display:flex;gap:12px;margin-bottom:14px;}
+.step-num{min-width:28px;height:28px;border-radius:50%;background:#1a3a6b;color:#fff;
+  font-weight:800;font-size:.8rem;display:flex;align-items:center;justify-content:center;}
+.step-body p{font-size:.78rem;color:#555;line-height:1.5;}
+.step-body code{background:#f0f4fa;padding:1px 5px;border-radius:4px;font-size:.75rem;color:#1a3a6b;}
+@media print{
+  #loginScreen,#appScreen .sidebar,#appScreen .topbar,#appScreen .content,.rpt-btns,.logout-btn{display:none!important;}
+  #reportModal{display:flex!important;position:static!important;background:none!important;}
+  .report-box{box-shadow:none;max-height:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen">
+<div class="login-card">
+  <div class="login-logo">🏫</div>
+  <h2>Baidoa Bedrock Academy</h2>
+  <p class="sub">✦ Empowering Minds, Shaping the Futures ✦</p>
+  <div class="role-row">
+    <button class="role-btn" onclick="setRole('admin',this)">🏫 Admin</button>
+    <button class="role-btn active" onclick="setRole('teacher',this)">👩‍🏫 Teacher</button>
+    <button class="role-btn" onclick="setRole('student',this)">🎓 Student</button>
+  </div>
+  <input class="linput" type="text" id="lusername" placeholder="Username"/>
+  <input class="linput" type="password" id="lpassword" placeholder="Password"/>
+  <p class="lerr" id="lerr">❌ Incorrect username or password.</p>
+  <button class="lbtn" onclick="doLogin()">Sign In</button>
+  <p class="hint">Contact your BBA Administrator for login credentials.</p>
+</div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="appScreen">
+<div class="sidebar">
+  <div class="brand">
+    <h2>🏫 Baidoa Bedrock Academy</h2>
+    <p>BBA School System</p>
+  </div>
+  <nav>
+    <a class="active" onclick="showPage('dashboard',this)"><span class="icon">📊</span>Dashboard</a>
+    <a onclick="showPage('students',this)"><span class="icon">🎓</span>Students</a>
+    <a onclick="showPage('attendance',this)"><span class="icon">📋</span>Attendance</a>
+    <a onclick="showPage('grades',this)"><span class="icon">📝</span>Grades</a>
+    <a onclick="showPage('teachers',this)"><span class="icon">👩‍🏫</span>Teachers</a>
+    <a onclick="showPage('notify',this)"><span class="icon">💬</span>WhatsApp Notify</a>
+    <a onclick="showPage('announcements',this)"><span class="icon">📢</span>Announcements</a>
+    <a onclick="showPage('reportcard',this)"><span class="icon">🖨️</span>Report Cards</a>
+    <a onclick="showPage('database',this)"><span class="icon">🗄️</span>Database Setup</a>
+  </nav>
+  <div class="sidebar-footer">© 2026 BBA &nbsp;|&nbsp; Empowering Minds</div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <h1 id="pageTitle">Dashboard</h1>
+    <div class="user">
+      <div class="avatar" id="userAvatar">A</div>
+      <span id="userLabel">Admin</span>
+      <span id="dbStatusTop" class="db-status disconnected">⚫ No Database</span>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats">
+        <div class="stat-card"><span class="icon">🎓</span><div class="num" id="totalStudents">0</div><div class="lbl">Total Students</div></div>
+        <div class="stat-card green"><span class="icon">👩‍🏫</span><div class="num" id="totalTeachers">0</div><div class="lbl">Teachers</div></div>
+        <div class="stat-card orange"><span class="icon">✅</span><div class="num" id="todayAtt">—</div><div class="lbl">Today's Attendance</div></div>
+        <div class="stat-card red"><span class="icon">💬</span><div class="num" id="totalSent">0</div><div class="lbl">Messages Sent</div></div>
+      </div>
+      <div class="grid2">
+        <div class="section"><h3>📢 Latest Announcements</h3><div id="announceFeed"><p style="color:#aaa;font-size:.8rem;">No announcements yet.</p></div></div>
+        <div class="section"><h3>🏆 Top Students</h3><table><thead><tr><th>#</th><th>Name</th><th>Avg</th></tr></thead><tbody id="topStudents"><tr><td colspan="3" style="color:#aaa;font-size:.78rem;padding:8px;">No grades yet.</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- STUDENTS -->
+    <div class="page" id="page-students">
+      <div class="section" style="margin-bottom:16px;">
+        <h3>➕ Add New Student</h3>
+        <div class="form-row">
+          <input type="text" id="sName" placeholder="Full Name"/>
+          <input type="text" id="sGrade" placeholder="Grade (e.g. Grade 5)"/>
+        </div>
+        <div class="form-row">
+          <input type="text" id="sParent" placeholder="Parent/Guardian Name"/>
+          <input type="text" id="sPhone" placeholder="Parent WhatsApp (e.g. 252615551234)"/>
+        </div>
+        <button class="btn" onclick="addStudent()">Add Student</button>
+      </div>
+      <div class="section"><h3>🎓 Student Records</h3>
+        <table><thead><tr><th>#</th><th>Name</th><th>Grade</th><th>Parent</th><th>WhatsApp</th><th>Actions</th></tr></thead>
+        <tbody id="studentTable"><tr><td colspan="6" style="color:#aaa;text-align:center;padding:14px;">No students yet.</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="page" id="page-attendance">
+      <div class="section" style="margin-bottom:16px;">
+        <h3>📋 Mark Today's Attendance</h3>
+        <table><thead><tr><th>Student</th><th>Grade</th><th>Status</th></tr></thead>
+        <tbody id="attTable"></tbody></table>
+        <br/>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn" onclick="saveAttendance()">💾 Save Attendance</button>
+          <button class="btn wa" onclick="notifyAbsentParents()">💬 WhatsApp Absent Parents</button>
+        </div>
+      </div>
+      <div class="section"><h3>📊 Summary</h3><div id="attSummary"><p style="color:#aaa;font-size:.8rem;">Save attendance to see summary.</p></div></div>
+    </div>
+
+    <!-- GRADES -->
+    <div class="page" id="page-grades">
+      <div class="section" style="margin-bottom:16px;">
+        <h3>➕ Add Grade</h3>
+        <div class="form-row">
+          <select id="gStudent"><option value="">Select Student</option></select>
+          <input type="text" id="gSubject" placeholder="Subject (e.g. Math)"/>
+        </div>
+        <div class="form-row">
+          <input type="number" id="gScore" placeholder="Score (0–100)" min="0" max="100"/>
+          <input type="text" id="gTerm" placeholder="Term (e.g. Term 1)"/>
+        </div>
+        <button class="btn" onclick="addGrade()">Save Grade</button>
+      </div>
+      <div class="section"><h3>📝 All Grades</h3>
+        <table><thead><tr><th>Student</th><th>Subject</th><th>Score</th><th>Term</th><th>Result</th><th>Notify</th></tr></thead>
+        <tbody id="gradeTable"><tr><td colspan="6" style="color:#aaa;text-align:center;padding:14px;">No grades yet.</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- TEACHERS -->
+    <div class="page" id="page-teachers">
+      <div class="section" style="margin-bottom:16px;">
+        <h3>➕ Add Teacher</h3>
+        <div class="form-row">
+          <input type="text" id="tName" placeholder="Full Name"/>
+          <input type="text" id="tSubject" placeholder="Subject Taught"/>
+        </div>
+        <div class="form-row">
+          <input type="text" id="tPhone" placeholder="Phone Number"/>
+          <input type="text" id="tClass" placeholder="Class Assigned"/>
+        </div>
+        <button class="btn" onclick="addTeacher()">Add Teacher</button>
+      </div>
+      <div class="section"><h3>👩‍🏫 Teacher Records</h3>
+        <table><thead><tr><th>#</th><th>Name</th><th>Subject</th><th>Class</th><th>Phone</th><th>Action</th></tr></thead>
+        <tbody id="teacherTable"><tr><td colspan="6" style="color:#aaa;text-align:center;padding:14px;">No teachers yet.</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- WHATSAPP -->
+    <div class="page" id="page-notify">
+      <div class="section" style="margin-bottom:16px;">
+        <h3>💬 Send WhatsApp Message to Parent</h3>
+        <div class="form-row">
+          <select id="waStudent" onchange="updateWaPreview()"><option value="">Select Student</option></select>
+          <select id="waType" onchange="updateWaPreview()">
+            <option value="">Select Message Type</option>
+            <option value="absent">🔴 Student Absent Today</option>
+            <option value="late">⏰ Student Arrived Late</option>
+            <option value="grade">📝 Grade / Result Update</option>
+            <option value="exam">📅 Upcoming Exam Reminder</option>
+            <option value="fee">💳 School Fee Reminder</option>
+            <option value="meeting">🤝 Parent Meeting Invitation</option>
+            <option value="custom">✏️ Custom Message</option>
+          </select>
+        </div>
+        <div style="margin-bottom:10px;">
+          <span class="wa-tpl" onclick="setTpl('absent')">Absent</span>
+          <span class="wa-tpl" onclick="setTpl('late')">Late</span>
+          <span class="wa-tpl" onclick="setTpl('grade')">Grade</span>
+          <span class="wa-tpl" onclick="setTpl('exam')">Exam</span>
+          <span class="wa-tpl" onclick="setTpl('fee')">Fee</span>
+          <span class="wa-tpl" onclick="setTpl('meeting')">Meeting</span>
+        </div>
+        <textarea id="waMsg" rows="5" style="width:100%;resize:vertical;font-family:inherit;border:1.5px solid #c8e6c9;border-radius:8px;padding:10px;font-size:.8rem;background:#f0fdf4;" placeholder="Select a student and template above..."></textarea>
+        <button class="btn wa" style="margin-top:6px;" onclick="sendWhatsApp()">💬 Open WhatsApp & Send</button>
+      </div>
+      <div class="section"><h3>📋 Message Log</h3>
+        <div class="wa-log" id="waLog"><p style="color:#aaa;font-size:.78rem;">No messages sent yet.</p></div>
+      </div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div class="page" id="page-announcements">
+      <div class="section" style="margin-bottom:16px;">
+        <h3>➕ New Announcement</h3>
+        <input type="text" id="aTitle" placeholder="Title"/>
+        <input type="text" id="aBody" placeholder="Message / Details"/>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn" onclick="addAnnouncement()">📢 Post</button>
+          <button class="btn wa" onclick="broadcastAnnouncement()">💬 WhatsApp All Parents</button>
+        </div>
+      </div>
+      <div class="section"><h3>📢 All Announcements</h3><div id="allAnnounce"><p style="color:#aaa;font-size:.8rem;">No announcements yet.</p></div></div>
+    </div>
+
+    <!-- REPORT CARDS -->
+    <div class="page" id="page-reportcard">
+      <div class="section">
+        <h3>🖨️ Generate Report Card</h3>
+        <div class="form-row">
+          <select id="rcStudent"><option value="">Select Student</option></select>
+          <select id="rcTerm"><option value="">Select Term</option><option>Term 1</option><option>Term 2</option><option>Term 3</option></select>
+        </div>
+        <button class="btn green" onclick="generateReport()">📄 Generate Report Card</button>
+      </div>
+    </div>
+
+    <!-- DATABASE SETUP -->
+    <div class="page" id="page-database">
+      <div class="setup-box">
+        <h4>🗄️ Connect Your Free Firebase Database</h4>
+        <p>Firebase is a free database by Google. All your students, grades, and attendance will be saved permanently and synced across all devices. Follow these steps:</p>
+      </div>
+      <div class="section">
+        <h3>📋 Step-by-Step Setup (Free)</h3>
+        <div class="step"><div class="step-num">1</div><div class="step-body"><p>Go to <code>console.firebase.google.com</code> → Sign in with your Google account.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><p>Click <b>Add project</b> → Name it <code>bba-school</code> → Click <b>Create project</b>.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><p>Click <b>Realtime Database</b> (left menu) → <b>Create Database</b> → Choose your region → Start in <b>Test mode</b> → Enable.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body"><p>Click the ⚙️ gear icon → <b>Project settings</b> → Scroll down → Click <b>Web app</b> icon (<code>&lt;/&gt;</code>) → Register app → Copy the <b>firebaseConfig</b> object.</p></div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-body"><p>Paste your Firebase config below and click <b>Connect Database</b>:</p></div></div>
+
+        <textarea id="fbConfig" rows="9" style="width:100%;font-family:monospace;font-size:.75rem;border:1.5px solid #c8dcf5;border-radius:8px;padding:10px;background:#f7faff;margin-bottom:10px;" placeholder='Paste your firebaseConfig here, e.g.:
+{
+  "apiKey": "AIza...",
+  "authDomain": "bba-school.firebaseapp.com",
+  "databaseURL": "https://bba-school-default-rtdb.firebaseio.com",
+  "projectId": "bba-school",
+  "storageBucket": "bba-school.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "1:123:web:abc"
+}'></textarea>
+        <button class="btn green" onclick="connectFirebase()">🔌 Connect Database</button>
+        <div id="dbMsg" style="margin-top:10px;font-size:.8rem;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- REPORT MODAL -->
+<div id="reportModal">
+<div class="report-box">
+  <div class="rpt-header">
+    <div style="font-size:2.5rem;">🏫</div>
+    <h2>Baidoa Bedrock Academy</h2>
+    <p>Official Student Report Card | BBA</p>
+    <p style="font-style:italic;color:#e07b2a;font-size:.75rem;">Empowering Minds, Shaping the Futures</p>
+  </div>
+  <div class="rpt-info" id="rptInfo"></div>
+  <table class="rpt-table"><thead><tr><th>Subject</th><th>Score</th><th>Grade</th><th>Remarks</th></tr></thead><tbody id="rptBody"></tbody></table>
+  <div class="rpt-avg" id="rptAvg"></div>
+  <div class="rpt-btns">
+    <button class="btn" onclick="window.print()">🖨️ Print</button>
+    <button class="btn wa" id="rptWaBtn">💬 WhatsApp to Parent</button>
+    <button class="btn red" onclick="closeReport()">✕ Close</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ── AUTH ──
+const USERS={admin:{pass:'bba2026',role:'Admin',avatar:'A'},teacher:{pass:'bba123',role:'Teacher',avatar:'T'},student:{pass:'learn',role:'Student',avatar:'S'}};
+function setRole(r,el){document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');}
+function doLogin(){
+  const u=document.getElementById('lusername').value.trim().toLowerCase();
+  const p=document.getElementById('lpassword').value;
+  const err=document.getElementById('lerr');
+  if(USERS[u]&&USERS[u].pass===p){
+    err.style.display='none';
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appScreen').style.display='block';
+    document.getElementById('userAvatar').textContent=USERS[u].avatar;
+    document.getElementById('userLabel').textContent=USERS[u].role;
+    loadAll();
+  }else{err.style.display='block';}
+}
+function doLogout(){
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('lusername').value='';
+  document.getElementById('lpassword').value='';
+}
+
+// ── FIREBASE ──
+let db=null;
+function connectFirebase(){
+  const raw=document.getElementById('fbConfig').value.trim();
+  const msg=document.getElementById('dbMsg');
+  try{
+    const cfg=JSON.parse(raw);
+    if(firebase.apps.length)firebase.app().delete();
+    firebase.initializeApp(cfg);
+    db=firebase.database();
+    db.ref('.info/connected').on('value',snap=>{
+      const connected=snap.val();
+      const el=document.getElementById('dbStatusTop');
+      if(connected){
+        el.className='db-status connected';el.textContent='🟢 Database Connected';
+        msg.innerHTML='<span style="color:#27ae60;font-weight:700;">✅ Firebase connected! Your data will now save permanently.</span>';
+        loadAll();
+      }else{
+        el.className='db-status disconnected';el.textContent='🔴 Disconnected';
+      }
+    });
+  }catch(e){msg.innerHTML='<span style="color:#e74c3c;">❌ Invalid config. Please paste the full firebaseConfig object.</span>';}
+}
+
+// ── DATA (local fallback) ──
+let students=[],teachers=[],grades=[],attendance={},waLog=[],msgSentCount=0;
+
+function loadAll(){
+  if(!db){return;}
+  db.ref('students').on('value',snap=>{students=snap.val()?Object.values(snap.val()):[];renderStudents();renderWaStudentSelect();renderGradeSelect();renderRcSelect();updateStats();renderTopStudents();});
+  db.ref('teachers').on('value',snap=>{teachers=snap.val()?Object.values(snap.val()):[];renderTeachers();updateStats();});
+  db.ref('grades').on('value',snap=>{grades=snap.val()?Object.values(snap.val()):[];renderGrades();renderTopStudents();updateStats();});
+  db.ref('announcements').on('value',snap=>{
+    const list=snap.val()?Object.values(snap.val()):[];
+    const html=list.reverse().map(a=>`<div class="announce"><strong>${a.title}</strong>${a.body}</div>`).join('');
+    document.getElementById('allAnnounce').innerHTML=html||'<p style="color:#aaa;font-size:.8rem;">No announcements yet.</p>';
+    document.getElementById('announceFeed').innerHTML=html||'<p style="color:#aaa;font-size:.8rem;">No announcements yet.</p>';
+  });
+}
+
+// ── NAV ──
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('pageTitle').textContent=el.textContent.trim();
+  if(id==='attendance')renderAttendance();
+  if(id==='notify')renderWaStudentSelect();
+}
+
+// ── STUDENTS ──
+function renderStudents(){
+  const tb=document.getElementById('studentTable');
+  if(!students.length){tb.innerHTML='<tr><td colspan="6" style="color:#aaa;text-align:center;padding:14px;">No students yet.</td></tr>';return;}
+  tb.innerHTML=students.map((s,i)=>`
+    <tr><td>${i+1}</td><td>${s.name}</td><td>${s.grade}</td><td>${s.parent}</td><td>${s.phone||'—'}</td>
+    <td style="display:flex;gap:5px;">
+      <button class="btn wa sm" onclick="quickWa('${s.phone}','${s.name}','${s.parent}')">💬</button>
+      <button class="btn red sm" onclick="deleteStudent('${s.id}')">✕</button>
+    </td></tr>`).join('');
+}
+function addStudent(){
+  const n=v('sName'),g=v('sGrade'),p=v('sParent'),ph=v('sPhone');
+  if(!n||!g){alert('Enter name and grade.');return;}
+  const id='s_'+Date.now();
+  const obj={id,name:n,grade:g,parent:p||'—',phone:ph||''};
+  if(db){db.ref('students/'+id).set(obj);}
+  else{students.push(obj);renderStudents();updateStats();}
+  ['sName','sGrade','sParent','sPhone'].forEach(clear);
+}
+function deleteStudent(id){
+  if(!confirm('Remove student?'))return;
+  if(db){db.ref('students/'+id).remove();}
+  else{students=students.filter(s=>s.id!==id);renderStudents();updateStats();}
+}
+function quickWa(phone,name,parent){
+  if(!phone){alert('No WhatsApp number saved.');return;}
+  const msg=`Assalamu Alaikum ${parent},\n\nThis is Baidoa Bedrock Academy (BBA) regarding your child *${name}*.\n\nPlease contact the school for more information.\n\n✦ BBA — Empowering Minds, Shaping the Futures`;
+  openWa(phone,msg,name,'Quick Message');
+}
+
+// ── ATTENDANCE ──
+function renderAttendance(){
+  if(!students.length){document.getElementById('attTable').innerHTML='<tr><td colspan="3" style="color:#aaa;padding:14px;">No students yet. Add students first.</td></tr>';return;}
+  document.getElementById('attTable').innerHTML=students.map(s=>`
+    <tr><td>${s.name}</td><td>${s.grade}</td>
+    <td><select id="att-${s.id}">
+      <option value="present" ${attendance[s.id]==='present'?'selected':''}>✅ Present</option>
+      <option value="absent" ${attendance[s.id]==='absent'?'selected':''}>❌ Absent</option>
+      <option value="late" ${attendance[s.id]==='late'?'selected':''}>⏰ Late</option>
+    </select></td></tr>`).join('');
+}
+function saveAttendance(){
+  students.forEach(s=>{attendance[s.id]=document.getElementById('att-'+s.id).value;});
+  const present=Object.values(attendance).filter(x=>x==='present').length;
+  const ab=Object.values(attendance).filter(x=>x==='absent').length;
+  const lt=Object.values(attendance).filter(x=>x==='late').length;
+  const pct=students.length?Math.round(present/students.length*100):0;
+  document.getElementById('todayAtt').textContent=pct+'%';
+  if(db){const today=new Date().toISOString().split('T')[0];db.ref('attendance/'+today).set(attendance);}
+  document.getElementById('attSummary').innerHTML=`
+    <p style="font-size:.8rem;margin-bottom:8px;">Present: <b>${present}</b> &nbsp; Absent: <b>${ab}</b> &nbsp; Late: <b>${lt}</b></p>
+    <div class="att-bar"><div class="att-fill" style="width:${pct}%"></div></div>
+    <p style="font-size:.75rem;color:#27ae60;margin-top:4px;">${pct}% attendance rate today</p>`;
+  alert('Attendance saved!');
+}
+function notifyAbsentParents(){
+  const abs=students.filter(s=>attendance[s.id]==='absent');
+  if(!abs.length){alert('No absent students. Save attendance first.');return;}
+  const today=new Date().toLocaleDateString('en-GB');
+  abs.forEach((s,i)=>{
+    if(!s.phone)return;
+    const msg=`Assalamu Alaikum ${s.parent},\n\nBaidoa Bedrock Academy (BBA):\n\nYour child *${s.name}* (${s.grade}) was *absent* today, ${today}.\n\nPlease inform us of the reason.\n\n✦ BBA — Empowering Minds, Shaping the Futures`;
+    setTimeout(()=>openWa(s.phone,msg,s.name,'Absent Notice'),i*1500);
+  });
+}
+
+// ── GRADES ──
+function renderGradeSelect(){
+  document.getElementById('gStudent').innerHTML='<option value="">Select Student</option>'+students.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+function addGrade(){
+  const sid=document.getElementById('gStudent').value;
+  const subj=v('gSubject'),score=parseInt(document.getElementById('gScore').value),term=v('gTerm');
+  if(!sid||!subj||isNaN(score)){alert('Fill all fields.');return;}
+  const st=students.find(s=>s.id==sid);
+  const id='g_'+Date.now();
+  const obj={id,sid,name:st.name,subject:subj,score,term:term||'Term 1'};
+  if(db){db.ref('grades/'+id).set(obj);}
+  else{grades.push(obj);renderGrades();renderTopStudents();updateStats();}
+  ['gSubject','gScore','gTerm'].forEach(clear);
+  document.getElementById('gStudent').value='';
+}
+function renderGrades(){
+  const tb=document.getElementById('gradeTable');
+  if(!grades.length){tb.innerHTML='<tr><td colspan="6" style="color:#aaa;text-align:center;padding:14px;">No grades yet.</td></tr>';return;}
+  tb.innerHTML=grades.map(g=>`
+    <tr><td>${g.name}</td><td>${g.subject}</td><td>${g.score}%</td><td>${g.term}</td>
+    <td><span class="badge ${g.score>=50?'pass':'fail'}">${g.score>=50?'Pass':'Fail'}</span></td>
+    <td><button class="btn wa sm" onclick="notifyGrade('${g.id}')">💬</button></td></tr>`).join('');
+}
+function notifyGrade(gid){
+  const g=grades.find(x=>x.id===gid);
+  const st=students.find(s=>s.id===g.sid);
+  if(!st||!st.phone){alert('No WhatsApp number for this student.');return;}
+  const msg=`Assalamu Alaikum ${st.parent},\n\nBBA Grade Update:\n\n🎓 *${g.name}*\n📚 ${g.subject}: *${g.score}%* (${g.score>=50?'✅ Pass':'❌ Fail'})\n📅 ${g.term}\n\n✦ BBA — Empowering Minds, Shaping the Futures`;
+  openWa(st.phone,msg,g.name,'Grade Update');
+}
+
+// ── TEACHERS ──
+function renderTeachers(){
+  const tb=document.getElementById('teacherTable');
+  if(!teachers.length){tb.innerHTML='<tr><td colspan="6" style="color:#aaa;text-align:center;padding:14px;">No teachers yet.</td></tr>';return;}
+  tb.innerHTML=teachers.map((t,i)=>`
+    <tr><td>${i+1}</td><td>${t.name}</td><td>${t.subject}</td><td>${t.cls}</td><td>${t.phone}</td>
+    <td><button class="btn red sm" onclick="deleteTeacher('${t.id}')">Remove</button></td></tr>`).join('');
+}
+function addTeacher(){
+  const n=v('tName'),s=v('tSubject'),p=v('tPhone'),c=v('tClass');
+  if(!n||!s){alert('Enter name and subject.');return;}
+  const id='t_'+Date.now();
+  const obj={id,name:n,subject:s,cls:c||'—',phone:p||'—'};
+  if(db){db.ref('teachers/'+id).set(obj);}
+  else{teachers.push(obj);renderTeachers();updateStats();}
+  ['tName','tSubject','tPhone','tClass'].forEach(clear);
+}
+function deleteTeacher(id){
+  if(!confirm('Remove teacher?'))return;
+  if(db){db.ref('teachers/'+id).remove();}
+  else{teachers=teachers.filter(t=>t.id!==id);renderTeachers();updateStats();}
+}
+
+// ── WHATSAPP ──
+const templates={
+  absent:(n,p)=>`Assalamu Alaikum ${p},\n\nBaidoa Bedrock Academy (BBA):\n\nYour child *${n}* was *absent* today.\nPlease inform us of the reason.\n\n✦ BBA — Empowering Minds, Shaping the Futures`,
+  late:(n,p)=>`Assalamu Alaikum ${p},\n\nBBA: Your child *${n}* arrived *late* today. Please ensure punctuality.\n\n✦ Empowering Minds, Shaping the Futures`,
+  grade:(n,p)=>`Assalamu Alaikum ${p},\n\nBBA: A new grade has been recorded for *${n}*. Please contact us for details.\n\n✦ BBA`,
+  exam:(n,p)=>`Assalamu Alaikum ${p},\n\n📅 BBA Exam Reminder:\n*${n}*'s exams are coming soon. Please ensure your child is prepared.\n\n🌟 Good luck!\n✦ BBA`,
+  fee:(n,p)=>`Assalamu Alaikum ${p},\n\nBBA Reminder: School fees for *${n}* are due. Please contact administration.\n\nThank you.\n✦ BBA`,
+  meeting:(n,p)=>`Assalamu Alaikum ${p},\n\nBBA invites you to our *Parent-Teacher Meeting*.\n📅 Date: To be confirmed\n🕘 9:00 AM | BBA School Hall\n\nYour attendance matters!\n✦ BBA`,
+};
+function renderWaStudentSelect(){
+  document.getElementById('waStudent').innerHTML='<option value="">Select Student</option>'+students.map(s=>`<option value="${s.id}">${s.name} (${s.parent})</option>`).join('');
+}
+function setTpl(type){document.getElementById('waType').value=type;updateWaPreview();}
+function updateWaPreview(){
+  const sid=document.getElementById('waStudent').value;
+  const type=document.getElementById('waType').value;
+  if(!sid||!type||type==='custom')return;
+  const st=students.find(s=>s.id==sid);
+  if(st&&templates[type])document.getElementById('waMsg').value=templates[type](st.name,st.parent);
+}
+function sendWhatsApp(){
+  const sid=document.getElementById('waStudent').value;
+  const msg=document.getElementById('waMsg').value.trim();
+  if(!sid){alert('Select a student.');return;}
+  if(!msg){alert('Write a message.');return;}
+  const st=students.find(s=>s.id==sid);
+  if(!st.phone){alert('No WhatsApp number for '+st.name);return;}
+  openWa(st.phone,msg,st.name,'Message');
+}
+function openWa(phone,msg,name,type){
+  window.open(`https://wa.me/${phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+  waLog.unshift({name,type,time:new Date().toLocaleTimeString()});
+  msgSentCount++;
+  document.getElementById('totalSent').textContent=msgSentCount;
+  document.getElementById('waLog').innerHTML=waLog.map(l=>`<div class="wa-log-item"><span>💬 <b>${l.name}</b> — ${l.type}</span><span class="wa-sent">✓ ${l.time}</span></div>`).join('');
+}
+
+// ── ANNOUNCEMENTS ──
+function addAnnouncement(){
+  const t=v('aTitle'),b=v('aBody');
+  if(!t||!b){alert('Fill both fields.');return;}
+  if(db){db.ref('announcements').push({title:t,body:b,time:Date.now()});}
+  else{
+    const html=`<div class="announce"><strong>${t}</strong>${b}</div>`;
+    document.getElementById('allAnnounce').insertAdjacentHTML('afterbegin',html);
+    document.getElementById('announceFeed').insertAdjacentHTML('afterbegin',html);
+  }
+  clear('aTitle');clear('aBody');
+}
+function broadcastAnnouncement(){
+  const t=v('aTitle'),b=v('aBody');
+  if(!t||!b){alert('Write the announcement first.');return;}
+  const msg=`📢 *BBA Announcement*\n\n*${t}*\n\n${b}\n\n✦ BBA — Empowering Minds, Shaping the Futures`;
+  const withPhone=students.filter(s=>s.phone);
+  if(!withPhone.length){alert('No parent numbers saved yet.');return;}
+  withPhone.forEach((s,i)=>setTimeout(()=>openWa(s.phone,msg,s.name,'Announcement'),i*1500));
+}
+
+// ── REPORT CARD ──
+function renderRcSelect(){
+  document.getElementById('rcStudent').innerHTML='<option value="">Select Student</option>'+students.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+function gradeLabel(s){return s>=90?'A':s>=80?'B':s>=70?'C':s>=60?'D':'F';}
+function remarks(s){return s>=90?'Excellent':s>=80?'Very Good':s>=70?'Good':s>=60?'Average':'Needs Improvement';}
+function generateReport(){
+  const sid=document.getElementById('rcStudent').value;
+  const term=document.getElementById('rcTerm').value;
+  if(!sid||!term){alert('Select student and term.');return;}
+  const st=students.find(s=>s.id==sid);
+  const sg=grades.filter(g=>g.sid===sid&&g.term===term);
+  if(!sg.length){alert('No grades for this student in '+term+'.');return;}
+  const avg=Math.round(sg.reduce((a,g)=>a+g.score,0)/sg.length);
+  document.getElementById('rptInfo').innerHTML=`<span>Student:</span><b>${st.name}</b><span>Class:</span><b>${st.grade}</b><span>Term:</span><b>${term}</b><span>Year:</span><b>2025–2026</b>`;
+  document.getElementById('rptBody').innerHTML=sg.map(g=>`<tr><td>${g.subject}</td><td>${g.score}%</td><td style="font-weight:700;color:${g.score>=50?'#1a7a45':'#c0392b'}">${gradeLabel(g.score)}</td><td>${remarks(g.score)}</td></tr>`).join('');
+  document.getElementById('rptAvg').innerHTML=`Overall Average: <span style="color:${avg>=50?'#27ae60':'#e74c3c'}">${avg}% — ${gradeLabel(avg)}</span>`;
+  document.getElementById('rptWaBtn').onclick=()=>{
+    if(!st.phone){alert('No WhatsApp number for this student.');return;}
+    const msg=`📄 *BBA Report Card*\n\n🎓 ${st.name} | ${st.grade} | ${term}\n\n${sg.map(g=>`• ${g.subject}: ${g.score}% (${gradeLabel(g.score)})`).join('\n')}\n\n📊 Average: *${avg}% — ${gradeLabel(avg)}*\n✦ BBA — Empowering Minds, Shaping the Futures`;
+    openWa(st.phone,msg,st.name,'Report Card');
+  };
+  document.getElementById('reportModal').classList.add('open');
+}
+function closeReport(){document.getElementById('reportModal').classList.remove('open');}
+
+// ── STATS ──
+function updateStats(){
+  document.getElementById('totalStudents').textContent=students.length;
+  document.getElementById('totalTeachers').textContent=teachers.length;
+}
+function renderTopStudents(){
+  const avgs=students.map(s=>{
+    const sg=grades.filter(g=>g.sid===s.id);
+    const avg=sg.length?Math.round(sg.reduce((a,g)=>a+g.score,0)/sg.length):null;
+    return{name:s.name,avg};
+  }).filter(s=>s.avg!==null).sort((a,b)=>b.avg-a.avg).slice(0,4);
+  document.getElementById('topStudents').innerHTML=avgs.length
+    ?avgs.map((s,i)=>`<tr><td>${i+1}</td><td>${s.name}</td><td>${s.avg}%</td></tr>`).join('')
+    :'<tr><td colspan="3" style="color:#aaa;font-size:.78rem;padding:8px;">No grades yet.</td></tr>';
+}
+function v(id){return document.getElementById(id).value.trim();}
+function clear(id){document.getElementById(id).value='';}
+</script>
+</body>
+</html>
